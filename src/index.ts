@@ -7,26 +7,40 @@
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
+import { Ai } from '@cloudflare/ai'
+import homePage from "../index.html"
+import detectObjects from './models/detect';
+import generateStory from './models/textGen';
+import generateThumbnail from './models/imageGen';
+import generatetTitle from './models/summarize';
 
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
+	AI: Ai;
 }
 
 export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
+	async fetch(request: Request, env: Env) {
+
+		const url = new URL(request.url);
+		const ai = env.AI;
+
+		const path = url.pathname.slice(1);
+
+		switch (path) {
+			case "detect":
+				return detectObjects(request, ai);
+			case "story":
+				return generateStory(request, ai);
+			case "image":
+				return generateThumbnail(request, ai);
+			case "summarize":
+				return generatetTitle(request, ai);
+			default:
+				return new Response(homePage, {
+					headers: {
+						'Content-type': "text/html"
+					}
+				})
+		}
 	},
 };

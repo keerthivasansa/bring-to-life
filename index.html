@@ -1,0 +1,232 @@
+<html>
+
+<head>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+	<title>Bring to Life!</title>
+</head>
+
+<body>
+	<div id="image-preview" class="image-input center">
+		<h2>Drop / Upload an image</h2>
+	</div>
+	<input hidden type="file" accept="image/*" id="img-input" />
+
+	<button id="send-image-btn" class="btn">Generate</button>
+
+	<div id="detection-result" hidden>
+		<h3 class="section-title">Detection results</h3>
+		<div id="object-container">
+		</div>
+	</div>
+
+	<div class="final-result">
+		<p id="result">Upload an image, to bringe the characters to life!</p>
+	</div>
+
+	<img id="thumbnail" width="256px" height="256px" />
+</body>
+
+<style>
+	body {
+		background-color: rgb(41, 45, 48);
+		margin: 24px;
+	}
+
+	body,
+	button,
+	input {
+		font-family: 'Inter', 'Courier New', Courier, monospace;
+	}
+
+	.image-input {
+		border: 6px dashed rgb(125, 125, 125);
+		background-color: rgb(190, 190, 190);
+		box-sizing: content-box;
+		width: 256px;
+		height: 256px;
+		text-align: center;
+		background-size: contain;
+		background-position: center;
+		background-repeat: no-repeat;
+	}
+
+	.center {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.btn {
+		padding: 8px 16px;
+		font-weight: 600;
+		border-radius: 6px;
+		margin-top: 24px;
+		border: 0;
+		font-size: 16px;
+		color: black;
+		background-color: rgb(236, 175, 43);
+	}
+
+	#result {
+		color: gainsboro;
+		white-space: pre-line;
+		max-width: 75%;
+
+	}
+
+	.section-title {
+		color: gainsboro;
+		opacity: 0.95;
+	}
+
+	.active {
+		color: transparent;
+		background-color: transparent;
+	}
+
+	#object-container {
+		display: flex;
+		flex-flow: row;
+		gap: 16px;
+	}
+
+	.object-chip {
+		background: rgb(236, 175, 43);
+		font-weight: 600;
+		padding: 8px 12px;
+		border-radius: 6px;
+		color: rgb(36, 36, 36);
+		font-size: 16px;
+	}
+</style>
+
+<script>
+
+	const detectContainer = document.getElementById("object-container");
+	const detectSection = document.getElementById("detection-result");
+
+	const thumbnail = document.getElementById("thumbnail");
+	const output = document.getElementById("result");
+
+	const imagePreview = document.getElementById("image-preview");
+	const imgInput = document.getElementById("img-input");
+
+	const sendBtn = document.getElementById("send-image-btn");
+
+	let currentImage;
+
+	imagePreview.addEventListener("dragover", (ev) => {
+		ev.preventDefault();
+		const file = ev.dataTransfer.files[0];
+		setImage(file);
+	});
+
+	imagePreview.addEventListener("drop", (ev) => {
+		ev.preventDefault();
+		const file = ev.dataTransfer.files[0];
+		setImage(file);
+	})
+
+	imagePreview.addEventListener("click", () => imgInput.click());
+
+	imgInput.addEventListener("input", (ev) => {
+		const img = ev.currentTarget.files[0];
+		setImage(img);
+	})
+
+	function setImage(img) {
+		currentImage = img;
+		const url = URL.createObjectURL(img);
+		imagePreview.classList.add("active");
+		imagePreview.style.backgroundImage = `url('${url}')`;
+	}
+
+	async function processImage() {
+
+		if (imgInput.files.length < 1)
+			return;
+
+		const img = imgInput.files[0];
+
+		const objects = await sendImage(img);
+
+		detectSection.hidden = false;
+		detectContainer.innerHTML = '';
+
+		objects.forEach(obj => {
+			const elem = document.createElement("span");
+			elem.classList.add("object-chip");
+			elem.innerText = obj;
+			detectContainer.appendChild(elem);
+			return elem;
+		})
+
+		const story = await genStory(objects);
+
+		const title = await genTitle(story);
+
+		setThumbnail(title, objects, img);
+	}
+
+	sendBtn.addEventListener("click", processImage);
+
+	async function sendImage(img) {
+		const formData = new FormData();
+		formData.set("image", img);
+		const resp = await fetch("/detect", {
+			method: "POST",
+			body: formData
+		});
+		const objects = await resp.json();
+		return objects;
+	}
+
+	async function genStory(objects) {
+		const source = new EventSource(`/story?objects=${objects.join(", ")}`, {
+			withCredentials: true
+		})
+		const decoder = new TextDecoder();
+		let story = "";
+
+		return new Promise((res, rej) => {
+			source.onmessage = (ev) => {
+				if (ev.data == "[DONE]") {
+					source.close();
+					res(story);
+				}
+				story += JSON.parse(ev.data)['response'];
+				output.innerText = story;
+			}
+		})
+	}
+
+	async function setThumbnail(title, objects, img) {
+		const formData = new FormData();
+
+		formData.set("image", img);
+		formData.set("title", title);
+		formData.set("objects", objects.join(", "));
+
+		const res = await fetch("/image", {
+			method: "POST",
+			body: formData
+		})
+
+		const thumbImg = await res.blob();
+		const source = URL.createObjectURL(thumbImg);
+		thumbnail.setAttribute("src", source);
+	}
+
+	async function genTitle(story) {
+		const res = await fetch("/summarize", {
+			method: "POST",
+			body: JSON.stringify({ story })
+		})
+		const title = await res.text();
+		return title;
+	}
+</script>
+
+</html>
