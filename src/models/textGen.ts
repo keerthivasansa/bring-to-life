@@ -14,7 +14,7 @@ async function generateStory(req: Request, ai: Ai) {
 		return new Response("Missing objects", { status: 401 });
 
 	const messages = [
-		{ role: "system", content: "Imagine the objects given as characters of a story. Fix a theme for the story, start narrating the story, no need to mention any remarks or other words. Just output the story." },
+		{ role: "system", content: "Imagine the objects given as characters of a story. Fix a theme for the story, start narrating the story, no need to mention any remarks or other words. Just output the story. Space the story into paragraphs and leave enough space between each of them." },
 		{
 			role: "user",
 			content: objects,
