@@ -10,7 +10,7 @@ async function generatetTitle(req: Request, ai: Ai) {
 
 	const result = await ai.run("@cf/facebook/bart-large-cnn", {
 		max_length: 512,
-		input_text: `The characters of these story are: ${body.objects}, ${body.story}. Also include what the name of each character is in the beginning.`
+		input_text: `Very important: the character names, overall genre of the story. The story: ${body.story}. `
 	})
 	return new Response(result.summary)
 }

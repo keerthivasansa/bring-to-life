@@ -1,16 +1,15 @@
 import type { Ai } from "@cloudflare/ai";
 
-async function generateThumbnail(req: Request, ai: Ai) {
-	const formData = await req.formData();
+interface ImageGenReqBody {
+	objects: string[];
+	summary: string;
+}
 
-	const url = new URL(req.url)
-	const title = formData.get("title");
-	// const objects = formData.get("objects") || "invalid";
-	// const objects = formData.get("objects");
-	if (!title || title instanceof File)
-		return;
+async function generateThumbnail(req: Request, ai: Ai) {
+	const body: ImageGenReqBody = await req.json();
+
 	const img = await ai.run("@cf/stabilityai/stable-diffusion-xl-base-1.0", {
-		prompt: title,
+		prompt: `Prepare a poster for a story with summary: ${body.summary}. Characters present: ${body.objects.join(", ")}. Only include the characters if they are present in the summary.`,
 	})
 
 	return new Response(img)

@@ -9,15 +9,16 @@ async function generateStory(req: Request, ai: Ai) {
 	const url = new URL(req.url);
 
 	const objects = url.searchParams.get("objects");
+	const description = url.searchParams.get("description");
 
 	if (!objects)
 		return new Response("Missing objects", { status: 401 });
 
 	const messages = [
-		{ role: "system", content: "Imagine the objects given as characters of a story. Fix a theme for the story, start narrating the story, no need to mention any remarks or other words. Just output the story. Space the story into paragraphs and leave enough space between each of them." },
+		{ role: "system", content: "Imagine the objects given as characters of a story. Choose exactly one theme romance, mystery, thriller, action, fantasy, comedy. Start narrating the story, no need to mention any remarks or other words. Keep it short. Just output the story. Space the story into paragraphs and leave enough space between each of them. You don't have to annotate each section, just the spacing is enough. Output one short story." },
 		{
 			role: "user",
-			content: objects,
+			content: `${objects}. They are in a initial scene. ${description}. Try to build on this.`,
 		},
 	];
 

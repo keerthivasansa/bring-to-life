@@ -29,7 +29,7 @@
 			<p id="result">Upload an image, to bringe the characters to life!</p>
 		</div>
 
-		<img id="thumbnail" hidden width="256px" height="256px" />
+		<img id="thumbnail" hidden width="512px" height="512px" />
 	</main>
 	<footer class="center">
 		<small class="social">Developed by Keerthi Vasan S A (
@@ -144,8 +144,12 @@
 		.image-input {
 			margin: 0 auto;
 		}
-	}
 
+		#thumbnail {
+			width: 360px;
+			height: 360px;
+		}
+	}
 </style>
 
 <script>
@@ -190,8 +194,6 @@
 	}
 
 	async function processImage() {
-		sendBtn.disabled = true;
-
 		if (imgInput.files.length < 1)
 			return;
 
@@ -199,31 +201,40 @@
 
 		sendBtn.innerText = "Detecting objects";
 
-		const objects = await sendImage(img);
+		const { description, objects } = await sendImage(img);
 
 		detectSection.hidden = false;
 		detectContainer.innerHTML = '';
 
-		objects.forEach(obj => {
+		[description, ...objects].forEach(obj => {
 			const elem = document.createElement("span");
 			elem.classList.add("object-chip");
 			elem.innerText = obj;
 			detectContainer.appendChild(elem);
 			return elem;
 		})
+
 		sendBtn.innerText = "Generating story";
 
-		const story = await genStory(objects);
+		const story = await genStory(description, objects);
 
 		sendBtn.innerText = "Generating thumbnail";
-		const title = await genTitle(story);
+		const summary = await genSummary(story);
 
-		await setThumbnail(title, objects, img);
+		await setThumbnail(summary, objects);
 		sendBtn.textContent = "Generate";
-		sendBtn.disabled = false;
 	}
 
-	sendBtn.addEventListener("click", processImage);
+	sendBtn.addEventListener("click", async () => {
+		sendBtn.disabled = true;
+		try {
+			await processImage();
+		} catch (err) {
+			alert(err.toString())
+		}
+		sendBtn.disabled = false;
+
+	});
 
 	async function sendImage(img) {
 		const formData = new FormData();
@@ -236,10 +247,8 @@
 		return objects;
 	}
 
-	async function genStory(objects) {
-		const source = new EventSource(`/story?objects=${objects.join(", ")}`, {
-			withCredentials: true
-		})
+	async function genStory(description, objects) {
+		const source = new EventSource(`/story?objects=${objects.join(", ")}&description=${description}`);
 		const decoder = new TextDecoder();
 		let story = "";
 
@@ -247,7 +256,7 @@
 			source.onmessage = (ev) => {
 				if (ev.data == "[DONE]") {
 					source.close();
-					res(story);
+					return res(story);
 				}
 				story += JSON.parse(ev.data)['response'];
 				output.innerText = story;
@@ -255,16 +264,11 @@
 		})
 	}
 
-	async function setThumbnail(title, objects, img) {
-		const formData = new FormData();
-
-		formData.set("image", img);
-		formData.set("title", title);
-		formData.set("objects", objects.join(", "));
+	async function setThumbnail(summary, objects) {
 
 		const res = await fetch("/image", {
 			method: "POST",
-			body: formData
+			body: JSON.stringify({ summary, objects })
 		})
 
 		const thumbImg = await res.blob();
@@ -273,7 +277,7 @@
 		thumbnail.hidden = false;
 	}
 
-	async function genTitle(story) {
+	async function genSummary(story) {
 		const res = await fetch("/summarize", {
 			method: "POST",
 			body: JSON.stringify({ story })
