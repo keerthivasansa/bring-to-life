@@ -8,36 +8,66 @@
 </head>
 
 <body>
-	<div id="image-preview" class="image-input center">
-		<h2>Drop / Upload an image</h2>
-	</div>
-	<input hidden type="file" accept="image/*" id="img-input" />
-
-	<button id="send-image-btn" class="btn">Generate</button>
-
-	<div id="detection-result" hidden>
-		<h3 class="section-title">Detection results</h3>
-		<div id="object-container">
+	<h1 class="title">Bring to Life!</h1>
+	<main>
+		<div id="image-preview" class="image-input center">
+			<h2>Drop / Upload an image</h2>
 		</div>
-	</div>
+		<input hidden type="file" accept="image/*" id="img-input" />
 
-	<div class="final-result">
-		<p id="result">Upload an image, to bringe the characters to life!</p>
-	</div>
+		<button id="send-image-btn" class="btn">Generate</button>
 
-	<img id="thumbnail" width="256px" height="256px" />
+		<div id="detection-result" hidden>
+			<h3 class="section-title">Detection results</h3>
+			<div id="object-container">
+			</div>
+		</div>
+
+		<div class="final-result">
+			<p id="result">Upload an image, to bringe the characters to life!</p>
+		</div>
+
+		<img id="thumbnail" hidden width="256px" height="256px" />
+	</main>
+	<footer class="center">
+		<small class="social">Developed by Keerthi Vasan S A (
+			<a target="_blank" href="https://github.com/keerthivasansa/">Github</a> /
+			<a target="_blank" href="https://www.linkedin.com/in/keerthivasansa/">LinkedIn</a> /
+			DEV )</small>
+	</footer>
 </body>
 
 <style>
 	body {
 		background-color: rgb(41, 45, 48);
-		margin: 24px;
+		margin: 0;
 	}
+
+	.social {
+		color: gainsboro;
+	}
+
+	.title {
+		padding: 16px;
+		padding-bottom: 8px;
+		background-color: rgb(236, 175, 43);
+		border-bottom: 12px solid black;
+	}
+
+	a, a:visited {
+		color: gainsboro;
+	}
+
 
 	body,
 	button,
 	input {
 		font-family: 'Inter', 'Courier New', Courier, monospace;
+	}
+
+	main {
+		margin: 12px 24px;
+		min-height: 85vh;
 	}
 
 	.image-input {
@@ -217,6 +247,7 @@
 		const thumbImg = await res.blob();
 		const source = URL.createObjectURL(thumbImg);
 		thumbnail.setAttribute("src", source);
+		thumbnail.hidden = false;
 	}
 
 	async function genTitle(story) {
