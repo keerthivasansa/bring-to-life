@@ -35,7 +35,8 @@
 		<small class="social">Developed by Keerthi Vasan S A (
 			<a target="_blank" href="https://github.com/keerthivasansa/">Github</a> /
 			<a target="_blank" href="https://www.linkedin.com/in/keerthivasansa/">LinkedIn</a> /
-			DEV )</small>
+			<a target="_blank" href="https://dev.to/nectres">DEV</a> )
+		</small>
 	</footer>
 </body>
 
@@ -140,14 +141,20 @@
 		font-size: 16px;
 	}
 
+	footer {
+		margin: 14px 0;
+		text-align: center;
+		width: 100%;
+	}
+
 	@media (max-width: 800px) {
 		.image-input {
 			margin: 0 auto;
 		}
 
 		#thumbnail {
-			width: 360px;
-			height: 360px;
+			width: 256px;
+			height: 256px;
 		}
 	}
 </style>
@@ -193,9 +200,18 @@
 		imagePreview.style.backgroundImage = `url('${url}')`;
 	}
 
+	function resetState() {
+		detectSection.hidden = true;
+		detectContainer.innerHTML = '';
+		output.innerText = '';
+		thumbnail.hidden = true;
+	}
+
 	async function processImage() {
 		if (imgInput.files.length < 1)
 			return;
+
+		resetState();
 
 		const img = imgInput.files[0];
 
